@@ -1,0 +1,91 @@
+---
+title: "model"
+format: html
+execute: 
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+# Load required libraries
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(broom)
+library(gtsummary)
+library(rpart)
+library(randomForest)
+library(caret)
+library(class)
+library(Metrics)
+library(caTools)
+
+# Load the data
+data <- read.csv('data/food_production.csv')
+
+# Group by food and sum emissions
+emissions_by_food <- data %>%
+  group_by(Food_product) %>%
+  summarise(Total_emissions = sum(Total_emissions))
+
+# Fit a linear model (example)
+model <- lm(Total_emissions ~ ., data = data)
+
+# Display the model summary
+tidy(model)
+
+gtsummary::tbl_regression(model)
+
+
+# Fill the missing values with 0 in data frame:
+data <- data %>% mutate_all(~replace(., is.na(.), 0))
+
+
+# Convert character columns to factors
+data$Food_product <- as.factor(data$Food_product)
+
+# Train-Test Split
+set.seed(42)
+trainIndex <- createDataPartition(data$Total_emissions, p = .9, 
+                                  list = FALSE, 
+                                  times = 1)
+dataTrain <- data[trainIndex,]
+dataTest  <- data[-trainIndex,]
+
+# Match factor levels in the test set to those in the training set
+dataTest$Food_product <- factor(dataTest$Food_product, levels = levels(dataTrain$Food_product))
+
+# Standardize the data
+preProc <- preProcess(dataTrain, method = c("center", "scale"))
+dataTrain_scaled <- predict(preProc, dataTrain)
+dataTest_scaled  <- predict(preProc, dataTest)
+
+# Remove the response variable from the scaled test set
+dataTest_scaled$Total_emissions <- NULL
+
+# Fit a Decision Tree model
+model_tree <- rpart(Total_emissions ~ ., data = dataTrain_scaled)
+
+# Predictions
+pred_tree <- predict(model_tree, newdata = dataTest_scaled)
+
+# Evaluate the model using R²
+R2_tree <- R2(pred_tree, dataTest$Total_emissions)
+print(paste("R² for Decision Tree: ", R2_tree))
+
+# Fit a Random Forest model
+model_rf <- randomForest(Total_emissions ~ ., data = dataTrain_scaled, ntree = 100, seed = 42)
+
+# Predictions
+pred_rf <- predict(model_rf, newdata = dataTest_scaled)
+
+# Evaluate the model using R²
+R2_rf <- R2(pred_rf, dataTest$Total_emissions)
+print(paste("R² for Random Forest: ", R2_rf))
+
+
+
+
+
+```
