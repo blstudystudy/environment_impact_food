@@ -1,11 +1,15 @@
 ---
-title: "model"
+title: "Model"
 format: html
 execute: 
   echo: false
   warning: false
   message: false
 ---
+
+Model 1: Linear Model with Interaction Terms
+To explore potential interaction effects between covariates, we also fitted a linear model with interaction terms. The mathematical form is:
+![](1.bmp)
 
 ```{r}
 # Load required libraries
@@ -36,7 +40,10 @@ model <- lm(Total_emissions ~ ., data = data)
 tidy(model)
 
 gtsummary::tbl_regression(model)
+```
 
+Model 2: Decision Tree model
+```{r}
 
 # Fill the missing values with 0 in data frame:
 data <- data %>% mutate_all(~replace(., is.na(.), 0))
@@ -73,7 +80,11 @@ pred_tree <- predict(model_tree, newdata = dataTest_scaled)
 # Evaluate the model using R²
 R2_tree <- R2(pred_tree, dataTest$Total_emissions)
 print(paste("R² for Decision Tree: ", R2_tree))
+```
 
+
+Model 3: Random Forest model
+```{r}
 # Fit a Random Forest model
 model_rf <- randomForest(Total_emissions ~ ., data = dataTrain_scaled, ntree = 100, seed = 42)
 
