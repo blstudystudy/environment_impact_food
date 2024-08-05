@@ -85,7 +85,4 @@ R2_rf <- R2(pred_rf, dataTest$Total_emissions)
 print(paste("R² for Random Forest: ", R2_rf))
 
 
-
-
-
 ```
